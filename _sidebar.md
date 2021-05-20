@@ -1,6 +1,6 @@
-- Getting started
+- Danh sách dịch vụ
 
-  - [Quick start](quickstart.md)
+  - [Account](account.md)
   - [Writing more pages](more-pages.md)
   - [Custom navbar](custom-navbar.md)
   - [Cover page](cover.md)

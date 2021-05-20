@@ -1,937 +1,112 @@
-# Account
+# Đăng nhập ví PayME
 
-Main Service
+## Mô tả
 
-# Schema
+API dùng đăng nhập tài khoản ví PayME
 
-The schema has some main parts: name, version, settings, actions, methods, events.
+## Đường dẫn
 
-## Base properties
+`/v1/account/login`
 
-The Service has some base properties in the schema.
+## Phương thức
+
+POST
+
+## Cú pháp gọi dịch vụ đăng nhập
 
 ```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-};
+const res = await broker.call(actionName, params, opts);
 ```
 
-The name is a mandatory property so it must be defined. It’s the first part of action name when you call it.
+| Tham số      | Type   | Mô tả                                      |
+| ------------ | ------ | ------------------------------------------ |
+| `actionName` | String | Tên hành động được định nghĩa trong broker |
+| `params`     | Json   | Được truyền vào context của action         |
+| `opts`       | Json   | Được ghi đè vào request                    |
 
-To disable service name prefixing set $noServiceNamePrefix: true in Service settings.
+Available calling options:
 
-The version is an optional property. Use it to run multiple version from the same service. It is a prefix in the action name. It can be a Number or a String.
+| Name               | Type    | Mặc định | Mô tả                                                                                                                                                                                                                                                      |
+| ------------------ | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `timeout`          | Number  | null     | Thời gian chờ yêu cầu tính bằng mili giây. Nếu thời gian request bị timeout, và `fallbackResponse` chưa được định nghĩa, broker sẽ trả về lỗi `RequestTimeout`. Để tắt đi set giá trị về `0`. Nếu trường này không được định nghĩa, broker sẽ lấy mặc định |
+| `retries`          | Number  | null     | Số lần thử lại của một request. Để tắt set giá trị về `0`. Nếu trường này không được định nghĩa, broker sẽ lấy mặc định                                                                                                                                    |
+| `fallbackResponse` | Any     | null     | Trả về chính nó khi request thất bại                                                                                                                                                                                                                       |
+| `nodeID`           | String  | null     | Trường này được định nghĩa, hành động sẽ gọi trực tiếp đến node này                                                                                                                                                                                        |
+| `meta`             | Object  | {}       | Metadata của request. Là `ctx.meta` trong action handlerF                                                                                                                                                                                                  |
+| `parentCtx`        | Context | null     | Parent Context instance. Use it to chain the calls.                                                                                                                                                                                                        |
+| `requestID`        | String  | null     | Request ID or Correlation ID. Use it for tracing.                                                                                                                                                                                                          |
 
-```javascript
-// account.v1.service.js
-module.exports = {
-    name: "account",
-    version: 1,
-    actions: {
-        login() {...}
-    }
+## Request
+
+- Params mẫu
+
+```json
+{
+  "phone": "0333823057",
+  "password": "0b76aaa9c150e2366126567d02909f4a7e6e8eab766bade7216153f2a67aaf1b",
+  "clientId": "16f152a6d9c2c670"
 }
 ```
 
-To call this find action on version 2 service:
+| Key        | Type   | Required | Mô tả                                       | Ghi chú                     |
+| ---------- | ------ | -------- | ------------------------------------------- | --------------------------- |
+| `phone`    | String | Yes      | Số điện thoại đăng kí ví PayME              |                             |
+| `password` | String | Yes      | Mật khẩu được hash sha256 trước khi gửi lên |                             |
+| `clientId` | String | Yes      | Id của thiết bị                             | Id của thiết bị là duy nhất |
+
+- Request mẫu
+
+```javascript
+const res = await broker.call(
+  "v1.account.login",
+  {
+    phone: "0333823057",
+    password:
+      "0b76aaa9c150e2366126567d02909f4a7e6e8eab766bade7216153f2a67aaf1b",
+    clientId: "16f152a6d9c2c670",
+  },
+  {
+    timeout: 500,
+    retries: 3,
+    fallbackResponse: defaultRecommendation,
+  }
+);
+```
+
+## Response
+
+| Key              | Type   | Mô tả                                           |
+| ---------------- | ------ | ----------------------------------------------- |
+| `code`           | String | Số điện thoại đăng kí ví PayME                  |
+| `message`        | String | Mật khẩu được hash sha256 trước khi gửi lên     |
+| `state`          | String | Trạng thái của tài khoản khi đăng nhập thất bại |
+| `stateVersion`   | String | Trạng thái phiên bản                            |
+| `updateTitle`    | String | Title cập nhật ứng dụng                         |
+| `updateURL`      | String | URL cập nhật ứng dụng                           |
+| `accessToken`    | String | Mã truy cập                                     |
+| `accessTokenKey` | String | Mã truy cập                                     |
+
+Các trạng thái đăng nhập thất bại
+
+| Key                        | Mô tả                             |
+| -------------------------- | --------------------------------- |
+| `LOGIN_REQUIRE_VERIFY_OTP` | Đăng nhập yêu cầu nhập OTP        |
+| `LOGIN_FAIL_OVER_OTP`      | Nhập OTP sai nhiều lần            |
+| `ACCOUNT_EXIST`            | Tài khoản đã được liên kết        |
+| `LOGIN_FAIL_OVER_PASSWORD` | Đăng nhập sai thông tin nhiều lần |
+| `BUSINESS_ACCOUNT`         | Tài khoản doanh nghiệp            |
+
+- Response mẫu
 
 ```javscript
-broker.call("v1.account.login");
+{
+  "succeeded": true,
+  "message": "Đăng nhập thành công!",
+  "state": null,
+  "stateVersion": "",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Mjk5NzcsImFjY291bnRJZCI6Mzk0ODYzNTQxLCJzY29wZSI6W10sImNsaWVudElkIjoiMTZmMTUyYTZkOWMyYzY3MCIsImFwcElkIjpudWxsLCJpYXQiOjE2MjE1MzMxNzN9.K7Kl3uqwcYS5TSMPA5CJVg2Axy7UkThlqM9Lpr3Asro",
+  "accessTokenKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Mjk5NzcsImFjY291bnRJZCI6Mzk0ODYzNTQxLCJwaG9uZSI6Ijg0MzMzODIzMDU3IiwiYXBwSWQiOm51bGwsImlhdCI6MTYyMTUzMzE3M30.D7dwWLl_jY6KssIf3UDq5RytI8pA0DnunBexsAtOBfQ",
+  "updateURL": "apple.com/app/payme.vn",
+  "updateTitle": "update thanh toán   "
+}
 ```
-
-REST call
-Via API Gateway, make a request to POST /v1/account/login.
-
-To disable version prefixing set $noVersionPrefix: true in Service settings.
-
-<a id="query">
-<h1> Define a Query</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: [
-      "accountId",
-      "fullname",
-      "alias",
-      "page",
-      "phone",
-      "email",
-      "kyc",
-      "avatar",
-      "gender",
-      "birthday",
-      "address",
-      "isActive",
-      "state",
-      "isHandShake",
-      "isVerifiedEmail",
-      "isWaitingEmailVerification",
-      "accountType",
-    ],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "GET /",
-      params: {
-        phone: { type: "string" },
-        handShake: { type: "string" },
-        client { type: "string" },
-      },
-      async handler(ctx) {
-        /// handler module login
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is function handler a logic code
-
-<a id="login">
-<h1> Define a Login</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: [
-      "state",
-      "succeeded",
-      "message",
-      "stateVersion",
-      "updateTitle",
-      "updateURL",
-      "accessToken",
-      "accessTokenKey",
-    ],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "POST /login",
-      params: {
-        phone: { type: "string", require: true },
-        password: { type: "string", require: true },
-        activeCode: { type: "string" },
-        client { type: "string" },
-        handShake: { type: "string" },
-      },
-      async handler(ctx) {
-        /// handler module login
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is function handler a logic code
-
-<a id="logout">
-<h1>Define a Logout</h2>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["succeeded", "message"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "POST /logout",
-      async handler(ctx) {
-        /// handler module
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{handler} is a function handler a logic code
-
-<a id="register">
-<h1> Define a Register</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["state", "succeeded", "accessToken", "message"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "POST /register",
-      params: {
-        phone: { type: "string", require: true },
-        password: { type: "string", require: true },
-        fullname: { type: "string" },
-        activeCode: { type: "string" },
-        client { type: "string" },
-        handShake: { type: "string" },
-        accountType: { type: "string" },
-      },
-      async handler(ctx) {
-        /// handler module login
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is function handler a logic code
-
-<a id="sendotpregister">
-<h1> Define a Send OTP Register </h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["timeDelay", "succeeded", "state", "message"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "POST /register/sendOTP",
-      params: {
-        phone: { type: "string", require: true },
-        client { type: "string", require: true },
-        handShake: { type: "string" },
-      },
-      async handler(ctx) {
-        /// handler module login
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is function handler a logic code
-
-
-<a id="verifyactivecoderegister">
-<h1>
-Define a VerifyActiveCode Register
-</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["succeeded", "state", "message"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "POST /register/verifyActiveCode",
-      params: {
-        handShake: { type: String },
-        phone: { type: "string", require: true },
-        client { type: "string", require: true },
-        client { type: "string" },
-      },
-      async handler(ctx) {
-        /// handler module login
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is function handler a logic code
-
-<a id="changepassword">
-<h1>
-Define a ChangePassword
-</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["succeeded", "state", "accessToken"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "PUT /changePassword",
-      params: {
-        lastPassword: { type: "string", require: true },
-        password: { type: "string", require: true },
-        client { type: "string", require: true },
-      },
-      async handler(ctx) {
-        /// handler module
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is a function handler a logic code
-
-<a id="verifypassword">
-<h1>
-Define a Verify Password to Change Password
-</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["succeeded", "message"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "POST /changePassword",
-      params: {
-        lastPassword: { type: "string", require: true },
-        client { type: "string", require: true },
-      },
-      async handler(ctx) {
-        /// handler module
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is a function handler a logic code
-
-<a id="sendotpforgotpassword">
-<h1>
-Define a SendOTP for Forgot Password
-</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["succeeded", "message"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "POST /forgotPassword/sendOTP",
-      params: {
-        phone: { type: "string", require: true },
-        client { type: "string", require: true },
-      },
-      async handler(ctx) {
-        /// handler module
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is a function handler a logic code
-
-<a id="verifyotpforgotpassword">
-<h1>
-Define a VerifyOTP for Forgot Password
-</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["succeeded", "message", "state", "linkedNumber"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "POST /forgotPassword/sendOTP",
-      params: {
-        phone: { type: "string", require: true },
-        activeCode: { type: "string", require: true },
-        client { type: "string", require: true },
-      },
-      async handler(ctx) {
-        /// handler module
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is a function handler a logic code
-
-<a id="verifyprofileforgotpassword">
-<h1>
-Define a Verify Profile for Forgot Password
-</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["succeeded", "message", "state", "confirmCode"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "POST /forgotPassword/sendOTP",
-      params: {
-        phone: { type: "string", require: true },
-        client { type: "string", require: true },
-        confirmInfo: {
-          cardNumber: "string",
-          identifyNumber: "string",
-          birthday: "string",
-        },
-      },
-      async handler(ctx) {
-        /// handler module
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is a function handler a logic code
-
-<a id="updatepassword">
-<h1>
-Define a Update Password for Forgot Password
-</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["succeeded", "message", "state", "confirmCode"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "PUT /forgotPassword/updatePassword",
-      params: {
-        phone: { type: "string", require: true },
-        password: { type: "string", require: true },
-        activeCode: { type: "string", require: true },
-        client { type: "string", require: true },
-        confirmCode: { type: "string" },
-      },
-      async handler(ctx) {
-        /// handler module
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is a function handler a logic code
-
-<a id="kyc">
-<h1>
-Define a Register KYC
-</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: [
-      "succeeded",
-      "message",
-      "createdAt",
-      "limitTransactionAmount",
-      "approvedTimeExpected",
-    ],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "PUT /kyc",
-      params: {
-        fullname: { type: "string" },
-        gender: { type: "string" },
-        birthday: { type: "string" },
-        address: { type: "string" },
-        identifyType: { type: "string" },
-        issuedAt: { type: "date" },
-        placeOfIssue: { type: "string" },
-        video: { type: "string" },
-        face: { type: "string" },
-        image: {
-          front: { type: "string" },
-          back: { type: "string" },
-        },
-        client { type: "string", require: true },
-        merchant: {
-          taxCode: { type: "string" },
-          name: { type: "string" },
-          shortName: { type: "string" },
-          website: { type: "string" },
-          logo: { type: "string" },
-          address: { type: "string" },
-          business: { type: "string" },
-          representative: { type: "string" },
-          openTime: { type: "string" },
-          lincenseImage: { type: "array" },
-        },
-      },
-      async handler(ctx) {
-        /// handler module
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is a function handler a logic code
-
-<a id="securitycodepassword">
-<h1>
-Define a SecurityCode By Password
-</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["succeeded", "message", "securityCode", "code"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "POST /securityCode/password",
-      params: {
-        client { type: "string", require: true },
-        password: { type: "string", require: true },
-      },
-      async handler(ctx) {
-        /// handler module
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is a function handler a logic code
-
-<a id="securitycodetouchid">
-<h1>
-Define a SecurityCode by TouchId
-</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["succeeded", "message", "state", "code"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "POST /securityCode/touchId",
-      params: {
-        account { type: "number", require: true },
-        sign: { type: "string", require: true },
-        signType: { type: "string", require: true },
-      },
-      async handler(ctx) {
-        /// handler module
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is a function handler a logic code
-
-<a id="sendotptrustdevice">
-<h1>
-Define a SendOTP TrustDevice
-</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["succeeded", "message"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "POST /trustDevice/sendOTP",
-      params: {
-        client { type: "string", require: true },
-        phone: { type: "string", require: true },
-      },
-      async handler(ctx) {
-        /// handler module
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is a function handler a logic code
-
-<a id="deletetrustdevice">
-<h1>
-Define a Delete TrustDevice
-</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["succeeded", "message"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "DEL /trustDevice",
-      params: {
-        client { type: "string" },
-      },
-      async handler(ctx) {
-        /// handler module
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is a function handler a logic code
-
-<a id="verifyemail">
-<h1>
-Define a Verify Email
-</h1>
-</a>
-
-## Response
-
-```javascript
-module.exports = {
-  name: "account",
-  version: 1,
-  settings: {
-    fields: ["succeeded", "message"],
-  },
-};
-```
-
-{fields} are validate response to this action
-
-## Action
-
-```javascript
-module.exports = {
-  actions: {
-    login: {
-      rest: "POST /verifyEmail",
-      params: {
-        token: { type: "string", require: true },
-      }
-      async handler(ctx) {
-        /// handler module
-        return;
-      },
-    },
-  },
-};
-```
-
-{rest} is define method and end point of this action
-
-{params} is validate a request
-
-{handler} is a function handler a logic code

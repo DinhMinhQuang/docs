@@ -1,11 +1,10 @@
+ - [Trang Chủ](/)
 - Danh sách dịch vụ
+  - [Nhận OTP đăng kí](getOTP.md)
+  - [Đăng kí](register.md)
+  - [Đăng nhập](login.md)
 
-  - [Account](account.md)
-  - [Writing more pages](more-pages.md)
-  - [Custom navbar](custom-navbar.md)
-  - [Cover page](cover.md)
-
-- Customization
+<!-- - Customization
 
   - [Configuration](configuration.md)
   - [Themes](themes.md)
@@ -25,4 +24,4 @@
   - [Embed Files](embed-files.md)
 
 - [Awesome docsify](awesome.md)
-- [Changelog](changelog.md)
+- [Changelog](changelog.md) -->

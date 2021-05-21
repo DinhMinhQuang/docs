@@ -1,4 +1,4 @@
-# Đăng nhập ví PayME
+# Đăng nhập ví PayME <img class="emoji" src="https://github.githubassets.com/images/icons/emoji/memo.png" alt="memo">
 
 ## Mô tả
 
@@ -12,7 +12,7 @@ API dùng đăng nhập tài khoản ví PayME
 
 POST
 
-## Cú pháp gọi dịch vụ đăng nhập
+## Cú pháp gọi dịch vụ
 
 ```javascript
 const res = await broker.call(actionName, params, opts);
@@ -24,17 +24,17 @@ const res = await broker.call(actionName, params, opts);
 | `params`     | Json   | Được truyền vào context của action         |
 | `opts`       | Json   | Được ghi đè vào request                    |
 
-Available calling options:
+- Các tùy chọn có sẵn
 
 | Name               | Type    | Mặc định | Mô tả                                                                                                                                                                                                                                                      |
 | ------------------ | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `timeout`          | Number  | null     | Thời gian chờ yêu cầu tính bằng mili giây. Nếu thời gian request bị timeout, và `fallbackResponse` chưa được định nghĩa, broker sẽ trả về lỗi `RequestTimeout`. Để tắt đi set giá trị về `0`. Nếu trường này không được định nghĩa, broker sẽ lấy mặc định |
 | `retries`          | Number  | null     | Số lần thử lại của một request. Để tắt set giá trị về `0`. Nếu trường này không được định nghĩa, broker sẽ lấy mặc định                                                                                                                                    |
 | `fallbackResponse` | Any     | null     | Trả về chính nó khi request thất bại                                                                                                                                                                                                                       |
-| `nodeID`           | String  | null     | Trường này được định nghĩa, hành động sẽ gọi trực tiếp đến node này                                                                                                                                                                                        |
-| `meta`             | Object  | {}       | Metadata của request. Là `ctx.meta` trong action handlerF                                                                                                                                                                                                  |
-| `parentCtx`        | Context | null     | Parent Context instance. Use it to chain the calls.                                                                                                                                                                                                        |
-| `requestID`        | String  | null     | Request ID or Correlation ID. Use it for tracing.                                                                                                                                                                                                          |
+| `nodeID`           | String  | null     | Khi `nodeId` được định nghĩa, `broker.call()` sẽ gọi trực tiếp đến node này                                                                                                                                                                                |
+| `meta`             | Object  | { }      | Metadata của request. Là `ctx.meta` trong action handler                                                                                                                                                                                                   |
+| `parentCtx`        | Context | null     | Parent `Context` instance. Use it to chain the calls.                                                                                                                                                                                                      |
+| `requestID`        | String  | null     | `requestID` or `correlationId`. Dùng để `tracing`                                                                                                                                                                                                          |
 
 ## Request
 
@@ -75,16 +75,16 @@ const res = await broker.call(
 
 ## Response
 
-| Key              | Type   | Mô tả                                           |
-| ---------------- | ------ | ----------------------------------------------- |
-| `code`           | String | Số điện thoại đăng kí ví PayME                  |
-| `message`        | String | Mật khẩu được hash sha256 trước khi gửi lên     |
-| `state`          | String | Trạng thái của tài khoản khi đăng nhập thất bại |
-| `stateVersion`   | String | Trạng thái phiên bản                            |
-| `updateTitle`    | String | Title cập nhật ứng dụng                         |
-| `updateURL`      | String | URL cập nhật ứng dụng                           |
-| `accessToken`    | String | Mã truy cập                                     |
-| `accessTokenKey` | String | Mã truy cập                                     |
+| Key              | Type    | Mô tả                                           |
+| ---------------- | ------- | ----------------------------------------------- |
+| `succeeded`      | Boolean | Trạng thái thành công hoặc thất bại của dịch vụ |
+| `message`        | String  | Lời nhắn                                        |
+| `state`          | String  | Trạng thái của tài khoản khi đăng nhập thất bại |
+| `stateVersion`   | String  | Trạng thái phiên bản                            |
+| `updateTitle`    | String  | Title cập nhật ứng dụng                         |
+| `updateURL`      | String  | URL cập nhật ứng dụng                           |
+| `accessToken`    | String  | Mã truy cập                                     |
+| `accessTokenKey` | String  | Mã truy cập                                     |
 
 Các trạng thái đăng nhập thất bại
 
@@ -99,14 +99,16 @@ Các trạng thái đăng nhập thất bại
 - Response mẫu
 
 ```javscript
-{
-  "succeeded": true,
-  "message": "Đăng nhập thành công!",
-  "state": null,
-  "stateVersion": "",
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Mjk5NzcsImFjY291bnRJZCI6Mzk0ODYzNTQxLCJzY29wZSI6W10sImNsaWVudElkIjoiMTZmMTUyYTZkOWMyYzY3MCIsImFwcElkIjpudWxsLCJpYXQiOjE2MjE1MzMxNzN9.K7Kl3uqwcYS5TSMPA5CJVg2Axy7UkThlqM9Lpr3Asro",
-  "accessTokenKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Mjk5NzcsImFjY291bnRJZCI6Mzk0ODYzNTQxLCJwaG9uZSI6Ijg0MzMzODIzMDU3IiwiYXBwSWQiOm51bGwsImlhdCI6MTYyMTUzMzE3M30.D7dwWLl_jY6KssIf3UDq5RytI8pA0DnunBexsAtOBfQ",
-  "updateURL": "apple.com/app/payme.vn",
-  "updateTitle": "update thanh toán   "
-}
+  {
+    "succeeded": true,
+    "message": "Đăng nhập thành công!",
+    "state": null,
+    "stateVersion": "",
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Mjk5NzcsImFjY291bnRJZCI6Mzk0ODYzNTQxLCJzY29wZSI6W10sImNsaWVudElkIjoiMTZmMTUyYTZkOWMyYzY3MCIsImFwcElkIjpudWxsLCJpYXQiOjE2MjE1MzMxNzN9.K7Kl3uqwcYS5TSMPA5CJVg2Axy7UkThlqM9Lpr3Asro",
+    "accessTokenKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Mjk5NzcsImFjY291bnRJZCI6Mzk0ODYzNTQxLCJwaG9uZSI6Ijg0MzMzODIzMDU3IiwiYXBwSWQiOm51bGwsImlhdCI6MTYyMTUzMzE3M30.D7dwWLl_jY6KssIf3UDq5RytI8pA0DnunBexsAtOBfQ",
+    "updateURL": "apple.com/app/payme.vn",
+    "updateTitle": "update thanh toán   "
+  }
 ```
+
+<br></br>

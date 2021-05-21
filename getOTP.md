@@ -1,28 +1,28 @@
-# Trang Chủ :smiley:
+# Nhận OTP đăng kí ví PayME <img class="emoji" src="https://github.githubassets.com/images/icons/emoji/memo.png" alt="memo">
 
-## Tổng quan
+## Mô tả
 
-Tài liệu hướng dẫn gọi các api của cụm Account Service
+API dùng để nhận OTP để đăng kí tài khoản ví PayME
 
-- Danh sách API
+## Đường dẫn
 
-| API path                      | Mô tả API                                     |
-| ----------------------------- | --------------------------------------------- |
-| `/v1/account/login`           | Api đăng nhập tài khoản ví PayME              |
-| `/v1/account/register`        | Api đăng kí tài khoản ví PayME                |
-| `/v1/account/register/getOTP` | Api gửi OTP vào số tài khoản đăng kí ví PayME |
+`/v1/account/register/getOTP`
 
-- Cú pháp gọi dịch vụ :heart:
+## Phương thức
+
+`POST`
+
+## Cú pháp gọi dịch vụ
 
 ```javascript
 const res = await broker.call(actionName, params, opts);
 ```
 
-?> `actionName` là một chuỗi được phân tách với nhau bằng dấu chấm, phần đầu là tên dịch vụ, trong khi phần thứ 2 đại diện cho tên dịch vụ. Vì vậy, nếu bạn có dịch vụ `account` với hành động `login` có thể gọi nó là `account.login`. [^1]
-
-?> `params` là một đối tượng được truyền cho `action` như một phần của `Context`. Dịch vụ có thể truy cập nó qua `ctx.params`. Nó là tùy chọn. Nếu bạn không xác định, nó sẽ là `{}`. :smile:
-
-?> `opts` là một đối tượng để thiết lập / ghi đè một số tham số yêu cầu. Ví dụ: `timeout`, `retryCount`. `otps` là một tùy chọn.
+| Tham số      | Type   | Mô tả                                      |
+| ------------ | ------ | ------------------------------------------ |
+| `actionName` | String | Tên hành động được định nghĩa trong broker |
+| `params`     | Json   | Được truyền vào context của action         |
+| `opts`       | Json   | Được ghi đè vào request                    |
 
 - Các tùy chọn có sẵn
 
@@ -35,5 +35,66 @@ const res = await broker.call(actionName, params, opts);
 | `meta`             | Object  | { }      | Metadata của request. Là `ctx.meta` trong action handler                                                                                                                                                                                                   |
 | `parentCtx`        | Context | null     | Parent `Context` instance. Use it to chain the calls.                                                                                                                                                                                                      |
 | `requestID`        | String  | null     | `requestID` or `correlationId`. Dùng để `tracing`                                                                                                                                                                                                          |
+
+## Request
+
+- Params mẫu
+
+```json
+{
+  "phone": "0333803751",
+  "clientId": "16f152a6d9c2c670"
+}
+```
+
+| Key        | Type   | Required | Mô tả                                    | Ghi chú                     |
+| ---------- | ------ | -------- | ---------------------------------------- | --------------------------- |
+| `phone`    | String | Yes      | Số điện thoại đăng kí ví PayME, nhận OTP |                             |
+| `clientId` | String | Yes      | Id của thiết bị                          | Id của thiết bị là duy nhất |
+
+- Request mẫu
+
+```javascript
+const res = await broker.call(
+  "v1.account.register.getOTP",
+  {
+    phone: "0333803751",
+    clientId: "16f152a6d9c2c670",
+  },
+  {
+    timeout: 500,
+    retries: 3,
+    fallbackResponse: defaultRecommendation,
+  }
+);
+```
+
+## Response
+
+| Key         | Type    | Mô tả                                           |
+| ----------- | ------- | ----------------------------------------------- |
+| `succeeded` | Boolean | Trạng thái thành công hoặc thất bại của dịch vụ |
+| `message`   | String  | Lời nhắn trạng thái của dịch vụ                 |
+| `timeDelay` | Float   | Số giây đợi gửi lại OTP                         |
+| `state`     | String  | Mô tả trạng thái dịch vụ                        |
+
+OTP được gửi về số điện thoại sau khi request thành công
+
+Trạng thái thất bại
+
+| Key             | Mô tả                               |
+| --------------- | ----------------------------------- |
+| `ACCOUNT_EXIST` | Tài khoản đã tồn tại trong hệ thống |
+
+- Response mẫu
+
+```JSON
+  {
+    "succeeded": true,
+    "message": "Gửi OTP thành công",
+    "timeDelay": "-2",
+    "state":null
+  }
+```
 
 <br></br>
